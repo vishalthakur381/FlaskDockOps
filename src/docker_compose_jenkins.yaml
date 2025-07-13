@@ -1,0 +1,49 @@
+
+
+services:
+  jenkins-docker:
+    image: docker:dind  
+    container_name: jenkins-docker
+    privileged: true
+    networks:
+      jenkins:
+        aliases:
+          - docker
+    ports:
+      - 2376:2376
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - jenkins-docker-certs:/certs/client
+    environment:
+      - DOCKER_TLS_CERTDIR=/certs
+
+  jenkins-blueocean:
+    build: 
+      context: ./jenkins
+      dockerfile: ./Dockerfile
+    container_name: jenkins-blueocean
+    networks:
+      - jenkins
+    ports:
+      - 8080:8080
+      - 50000:50000
+    volumes:
+      - jenkins-data:/var/jenkins_home
+      - jenkins-docker-certs:/certs/client:ro
+    env_file:
+      # relative path of env variables
+      - ./config/jenkins.env 
+    restart: on-failure
+    depends_on:
+      - jenkins-docker
+
+
+networks:
+  # for docker in docker
+  jenkins:
+
+
+volumes:
+  # shared by both services jenkins & docker in docker
+  jenkins-data:
+  jenkins-docker-certs:
